@@ -14,20 +14,21 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 ser = Service("C:\\chromedriver.exe")
 op = webdriver.ChromeOptions()
-op.add_argument("--user-data-dir=C:\\Users\\thevi\\AppData\\Local\\Google\\Chrome\\User Data")
-op.add_argument("--profile-directory=Profile 34")
+op.add_argument("--user-data-dir=C:\\Users\\vinh.nong\\AppData\\Local\\Google\\Chrome\\User Data")
+op.add_argument("--profile-directory=Profile 1")
 op.add_argument("--disable-extensions")
 driver = webdriver.Chrome(service=ser, chrome_options=op)
 
 # option
-READ_FRIEND_FROM_FILE = False
+INSPECT_FRIEND_LIST = False
 INSPECT_POST = True
+UNFRIEND = False
 # get friend list
 
 print ("get friend list start")
 
 friend_list = []
-if READ_FRIEND_FROM_FILE == True
+if INSPECT_FRIEND_LIST == False:
     print ("read fiend list from friend.txt")
     with open('friend.txt', 'r') as filein:
         friend_list = json.load(filein)
@@ -47,11 +48,11 @@ else:
     while len(loading_element) > 0:
         print ("loading friend list ...")
         driver.find_element(By.XPATH, '//body').send_keys(Keys.END)
-        time.sleep(4)
+        time.sleep(10)
         loading_element = driver.find_elements(By.CSS_SELECTOR,
             loading_friends_panel_selector)
-
     print ("loading friend list done")
+    time.sleep(10)
     friends_panel_selector = "div[data-pagelet='ProfileAppSection_0']"
 
     friends_pannel = driver.find_element(By.CSS_SELECTOR,
@@ -82,13 +83,13 @@ for friend in friend_list:
     print (friend["link"])
 with open('friend.txt', 'w') as fileout:
      json.dump(friend_list, fileout)
-print(f"Number of friends: {len(friend_links)}")
+print(f"Number of friends: {len(friend_list)}")
 print ("get friend list done")
 # done get friend 
 # get post list
 
 print ("get post list")
-
+post_panels = []
 if INSPECT_POST == True:
     driver.get('https://www.facebook.com/me')
 
@@ -175,7 +176,7 @@ if INSPECT_POST == True:
                 loading_element = driver.find_elements(By.CSS_SELECTOR,
                     loading_like_panel_selector)
             print ("  loading like list done")
-
+            
             people_elements = like_popup_panel.find_elements(By.CSS_SELECTOR, scroll_element_selector) 
             page_link = ""
             for p in people_elements:
@@ -193,7 +194,7 @@ if INSPECT_POST == True:
                             friend["numberOfLike"] += 1
                             break
                 print (f"   Name of people liked: {page_link}")
-
+            print (f"  number of like: {len(people_elements)}")
             close_button_element_class = "hu5pjgll m6k467ps"
             close_button_element_selector = f"i[class='{close_button_element_class}'][data-visualcompletion='css-img']"
             close_button = like_popup_panel.find_element(By.CSS_SELECTOR,close_button_element_selector) 
@@ -217,15 +218,15 @@ if INSPECT_POST == True:
         see_more_comment_selector = f"div[class='{see_more_comment_class}']"
 
         see_more_comment_link_elements = comment_panel_element.find_elements(By.CSS_SELECTOR,
-            comment_panel_selector)
-
+            see_more_comment_selector)
+        print (f"  number of see_more_comment_link_elements: {see_more_comment_link_elements}")
         if len(see_more_comment_link_elements) > 0:
             print ("  have see more/hide comment link")
             had_see_more_comment_link = True
             while had_see_more_comment_link:
                 print ("  load more comment ...")
                 see_more_comment_link_elements = comment_panel_element.find_elements(By.CSS_SELECTOR,
-                    comment_panel_selector)
+                    see_more_comment_selector)
                 had_see_more_comment_link = False
                 for see_more_comment_link in see_more_comment_link_elements:
                     innerText = see_more_comment_link.get_attribute('innerText')
@@ -234,7 +235,10 @@ if INSPECT_POST == True:
                         had_see_more_comment_link = True
                         print ("  click on see more comment link")
                         driver.execute_script("arguments[0].scrollIntoView(true);", see_more_comment_link)
+                        time.sleep(10)
                         driver.execute_script("arguments[0].click();", see_more_comment_link)
+                        time.sleep(10)
+                        break
                     else:
                         print ("  this is hide comment, not click")
         print ("  load more comment done")
@@ -273,7 +277,7 @@ if INSPECT_POST == True:
 
 
 print ("result")
-numberOfAccountNeverLikeOrComment = len(friend_links)
+numberOfAccountNeverLikeOrComment = len(friend_list)
 totalNumberOfLike = 0
 totalNumberOfComment = 0
 for friend in friend_list:
@@ -284,87 +288,87 @@ for friend in friend_list:
         numberOfAccountNeverLikeOrComment -= 1
 
 print ("Sumary:")
-print(f"Number of friends: {len(friend_links)}")
+print(f"Number of friends: {len(friend_list)}")
 print(f"Number of posts: {len(post_panels)}")
 print (f"total Number Of Like: {totalNumberOfLike}")
 print (f"total Number Of Comment: {totalNumberOfComment}")
 print (f"number of friend need to unfriend: {numberOfAccountNeverLikeOrComment}")
 
-sorted (friend_list, key = lambda i: i['numberOfLike'],reverse=True)
-print ("the 10 people who like the most")
-for x in range(10):
-    print (f" rank {x}th : {friend_list[x]['link']}")
+print (type(friend_list[0]))
 
-sorted (friend_list, key = lambda i: i['numberOfComment'],reverse=True)
-print ("the 10 people who comment the most")
-for x in range(10):
-    print (f" rank {x}th : {friend_list[x]['link']}")
+rank = 20
+like_most_list = sorted (friend_list, key = lambda i: i['numberOfLike'],reverse=True)
+print (f"the {rank} people who like the most")
+for x in range(rank):
+    print (f" rank {x}th : {like_most_list[x]['link']}, like: {like_most_list[x]['numberOfLike']} times")
+
+comment_most_list = sorted (friend_list, key = lambda i: i['numberOfComment'],reverse=True)
+print (f"the {rank} people who comment the most")
+for x in range(rank):
+    print (f" rank {x}th : {comment_most_list[x]['link']}, comment: {comment_most_list[x]['numberOfComment']} times")
 
 # start unfriend process
 
+if UNFRIEND == True:
+    print (f"Do you want to see list of friend who never like or comment ({numberOfAccountNeverLikeOrComment} people) ")
+    print ("type Y to see")
+    x= input()
+    if x == 'Y':
+        for friend in friend_list:
+            if friend['hadComment'] == False and friend['hadLike'] == False:
+                print (f"friend link: {friend['link']}")
 
-print (f"Do you want to see list of friend who never like or comment ({numberOfAccountNeverLikeOrComment} people) ")
-print ("type Y to see")
-x= input()
-if x == 'Y':
-    for friend in friend_list:
-        if friend['hadComment'] == False and friend['hadLike'] == False:
-            print (f"friend link: {friend['link']}")
+    print (f"Do you want to unfriend all friend who never like or comment ({numberOfAccountNeverLikeOrComment} people) ")
+    print ("type Y to unfriend all")
+    x= input()
+    if x == 'Y':
+        for friend in friend_list:
+            if friend['hadComment'] == False and friend['hadLike'] == False:
+                driver.get(friend['link'])
+                time.sleep(2)
+                friend_button_class = (
+                    "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz nhd2j8a9 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of n00je7tq arfg74bv qs9ysxi8 k77z8yql abiwlrkh p8dawk7l lzcic4wl rq0escxv pq6dq46d cbu4d94t taijpn5t l9j0dhe7 k4urcfbm"
+                )
+                friend_button_selector = f"div[class='{friend_button_class}'][aria-label='Bạn bè']"
+                friend_button = driver.find_element(By.CSS_SELECTOR,
+                    friend_button_selector)
+                driver.execute_script("arguments[0].click();", friend_button)
+                time.sleep(1)
 
-print (f"Do you want to unfriend all friend who never like or comment ({numberOfAccountNeverLikeOrComment} people) ")
-print ("type Y to unfriend all")
-x= input()
-if x == 'Y':
-    for friend in friend_list:
-        if friend['hadComment'] == False and friend['hadLike'] == False:
-            driver.get(friend['link'])
-            time.sleep(2)
-            friend_button_class = (
-                "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz nhd2j8a9 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of n00je7tq arfg74bv qs9ysxi8 k77z8yql abiwlrkh p8dawk7l lzcic4wl rq0escxv pq6dq46d cbu4d94t taijpn5t l9j0dhe7 k4urcfbm"
-            )
-            friend_button_selector = f"div[class='{friend_button_class}'][aria-label='Bạn bè']"
-            friend_button = driver.find_element(By.CSS_SELECTOR,
-                friend_button_selector)
-            driver.execute_script("arguments[0].click();", friend_button)
-            time.sleep(1)
+                unfriend_button_class = (
+                    "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz p7hjln8o esuyzwwr f1sip0of n00je7tq arfg74bv qs9ysxi8 k77z8yql abiwlrkh p8dawk7l lzcic4wl dwo3fsh8 rq0escxv nhd2j8a9 j83agx80 btwxx1t3 pfnyh3mw opuu4ng7 kj2yoqh6 kvgmc6g5 oygrvhab l9j0dhe7 i1ao9s8h du4w35lb bp9cbjyn cxgpxx05 dflh9lhu sj5x9vvc scb9dxdr"
+                )
 
-            unfriend_button_class = (
-                "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz p7hjln8o esuyzwwr f1sip0of n00je7tq arfg74bv qs9ysxi8 k77z8yql abiwlrkh p8dawk7l lzcic4wl dwo3fsh8 rq0escxv nhd2j8a9 j83agx80 btwxx1t3 pfnyh3mw opuu4ng7 kj2yoqh6 kvgmc6g5 oygrvhab l9j0dhe7 i1ao9s8h du4w35lb bp9cbjyn cxgpxx05 dflh9lhu sj5x9vvc scb9dxdr"
-            )
+                unfriend_button_selector = f"div[class='{unfriend_button_class}']"
+                unfriend_buttons = driver.find_elements(By.CSS_SELECTOR,
+                    unfriend_button_selector)
 
-            unfriend_button_selector = f"div[class='{unfriend_button_class}']"
-            unfriend_buttons = driver.find_elements(By.CSS_SELECTOR,
-                unfriend_button_selector)
-
-            for unfriend_button in unfriend_buttons:
-                innerText = unfriend_button.get_attribute('innerText')
-                if "Hủy kết bạn" in innerText:
-                    driver.execute_script("arguments[0].click();", unfriend_button)
-                    time.sleep(2)
-                    confirm_button_class = (
-                        "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz nhd2j8a9 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of n00je7tq arfg74bv qs9ysxi8 k77z8yql abiwlrkh p8dawk7l lzcic4wl rq0escxv pq6dq46d cbu4d94t taijpn5t l9j0dhe7 k4urcfbm"
-                    )
-                    confirm_button_selector = f"div[class='{confirm_button_class}'][aria-label='Xác nhận']"
-                    confirm_button = driver.find_element(By.CSS_SELECTOR,
-                        confirm_button_selector)
-                    driver.execute_script("arguments[0].click();", confirm_button)
-                    time.sleep(2)
+                for unfriend_button in unfriend_buttons:
+                    innerText = unfriend_button.get_attribute('innerText')
+                    if "Hủy kết bạn" in innerText:
+                        driver.execute_script("arguments[0].click();", unfriend_button)
+                        time.sleep(2)
+                        confirm_button_class = (
+                            "oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz nhd2j8a9 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of n00je7tq arfg74bv qs9ysxi8 k77z8yql abiwlrkh p8dawk7l lzcic4wl rq0escxv pq6dq46d cbu4d94t taijpn5t l9j0dhe7 k4urcfbm"
+                        )
+                        confirm_button_selector = f"div[class='{confirm_button_class}'][aria-label='Xác nhận']"
+                        confirm_button = driver.find_element(By.CSS_SELECTOR,
+                            confirm_button_selector)
+                        driver.execute_script("arguments[0].click();", confirm_button)
+                        time.sleep(2)
 
 
-else:
-    for friend in friend_list:
-        if friend['hadComment'] == False and friend['hadLike'] == False:
-            driver.get(friend['link'])
-            time.sleep(2)
-            print (f"Do you want unfriend: {friend['link']}")
-            print ("type Y to unfriend")
-            x= input()
-            if x == 'Y':
-                print (f"Unfriend: {friend['link']}")
+    else:
+        for friend in friend_list:
+            if friend['hadComment'] == False and friend['hadLike'] == False:
+                driver.get(friend['link'])
+                time.sleep(2)
+                print (f"Do you want unfriend: {friend['link']}")
+                print ("type Y to unfriend")
+                x= input()
+                if x == 'Y':
+                    print (f"Unfriend: {friend['link']}")
                 
-
-    for friend in friend_list:
-        print (f"friend link: {friend['link']}")
 
 time.sleep(5) # Let the user actually see something!
 
